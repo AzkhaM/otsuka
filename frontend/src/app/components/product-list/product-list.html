@@ -1,0 +1,44 @@
+<div class="page">
+  <h1>Inventory Produk</h1>
+
+  <form (ngSubmit)="submit()">
+    <input name="name" [(ngModel)]="form.name" placeholder="Nama produk" required />
+    <input name="category" [(ngModel)]="form.category" placeholder="Kategori" required />
+    <input name="stock" type="number" [(ngModel)]="form.stock" placeholder="Stok" required />
+    <input name="price" type="number" [(ngModel)]="form.price" placeholder="Harga" required />
+    <button type="submit">{{ editingId() ? 'Update' : 'Tambah' }}</button>
+    @if (editingId()) {
+      <button type="button" (click)="cancelEdit()">Batal</button>
+    }
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nama</th>
+        <th>Kategori</th>
+        <th>Stok</th>
+        <th>Harga</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (product of products(); track product.id) {
+        <tr>
+          <td>{{ product.name }}</td>
+          <td>{{ product.category }}</td>
+          <td>{{ product.stock }}</td>
+          <td>{{ product.price | number }}</td>
+          <td>
+            <button type="button" (click)="edit(product)">Edit</button>
+            <button type="button" (click)="remove(product.id)">Hapus</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5">Belum ada produk.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

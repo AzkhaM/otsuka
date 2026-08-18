@@ -1,0 +1,299 @@
+<!-- ==== LOGBOOK - Amandemen 3 #2/#3: SATU tabel gabungan per HALAMAN (kapasitas 20 baris,
+     dipadatkan baris kosong bila kurang, otomatis pecah >1 halaman/.doc-logbook bila lebih)
+     - bukan lagi satu dokumen terpisah per blok/kode. Urutan baris tetap terkelompok per
+     kode (dijaga kelompokkanLogbook() di induk + halaman() di atas). ==== -->
+@if (mode() === 'logbook') {
+  @if (blok().length) {
+    @if (toolbar()) {
+      <div class="doc-toolbar">
+        <button type="button" class="doc-btn-print" (click)="cetak()">Unduh PDF</button>
+        <span class="doc-toolbar-note">Membuka dialog cetak browser - pilih "Simpan sebagai PDF" untuk mengunduh.</span>
+      </div>
+    }
+    @for (pg of halaman(); track $index) {
+      <section class="b3-doc doc-logbook">
+        <!-- Amandemen 2 #1: header replika border tabel nyata - 3 sel: brand | judul | info-box -->
+        <table class="doc-head">
+          <tbody>
+            <tr>
+              <td class="doc-head-brand">
+                <img [src]="logoOtsuka" alt="Logo PT Amerta Indah Otsuka" class="doc-logo" />
+                <span>{{ dokLogbook.section }}</span>
+                <span>{{ dokLogbook.departemen }}</span>
+              </td>
+              <td class="doc-head-title"><h1 class="doc-title">{{ dokLogbook.judul }}</h1></td>
+              <td class="doc-head-info">
+                <table class="doc-infobox">
+                  <tbody>
+                    <tr><th>Halaman</th><td>{{ $index + 1 }} dari {{ halaman().length }}</td></tr>
+                    <tr><th>No. Dokumen</th><td>{{ dokLogbook.noDokumen }}</td></tr>
+                    <tr><th>Tanggal</th><td>{{ dokLogbook.tanggal }}</td></tr>
+                    <tr><th>No. Revisi</th><td>{{ dokLogbook.revisi }}</td></tr>
+                    <tr><th>Mengantikan No.</th><td>{{ dokLogbook.mengantikanNomor }}</td></tr>
+                    <tr><th>Tanggal</th><td>{{ dokLogbook.mengantikanTanggal }}</td></tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="doc-meta">
+          <tbody>
+            <tr><th>Area</th><td></td></tr>
+            <tr><th>Karakteristik Limbah</th><td>{{ dokLogbook.karakteristik }}</td></tr>
+          </tbody>
+        </table>
+
+        <!-- Ronde 5 MAJOR fix: table-layout:fixed + lebar kolom eksplisit (bukan auto) -
+             mencegah kolom sempit memaksa teks bungkus 2 baris di SETIAP baris data.
+             Ronde 6 MAJOR fix: lebar kolom Tujuan Penyerahan & Bukti Nomor Dokumen dilebarkan
+             (13/10 -> 17/12.5) dengan mengambil ruang HANYA dari 2 kolom yang nilainya
+             TERJAMIN pendek/setara kolom tanggal lain yang sudah terbukti aman: Sisa (kg)
+             (selalu string "0" - lihat `sisaKg: 0 // P-3` di b3-waste-logbook.ts
+             bangunLogbook(), 6% -> 2%) dan Maksimal Penyimpanan (format tanggal sama persis
+             dengan kolom Tanggal Masuk/Keluar yang sudah terbukti muat di 7%, 9.5% -> 7%).
+             CATATAN (percobaan awal ronde ini, DIBATALKAN): sempat coba juga mengambil dari
+             No./Petugas, TAPI diverifikasi PDF sungguhan itu bikin "Pak Ruli"/"20" bungkus 2
+             baris di SEMUA baris - regresi lebih parah (4 halaman). No./Petugas/JmlMasuk/
+             JmlKeluar/TglMasuk/TglKeluar/Jenis TIDAK disentuh (lebar asli sudah terbukti aman).
+             Tujuan/noManifest TETAP dijaga tambahan lewat clip ellipsis (lihat .doc-cell-clip
+             di CSS) sebagai jaring pengaman mutlak - lihat 03-frontend.md Bagian 13. -->
+        <table class="doc-table doc-table-logbook">
+          <colgroup>
+            <col style="width: 2.5%" /><col style="width: 15%" /><col style="width: 7%" />
+            <col style="width: 6%" /><col style="width: 6%" /><col style="width: 7%" />
+            <col style="width: 6%" /><col style="width: 7%" /><col style="width: 6%" />
+            <col style="width: 17%" /><col style="width: 12.5%" /><col style="width: 2%" />
+            <col style="width: 6%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th rowspan="2">No.</th>
+              <th rowspan="2">Jenis Limbah B3 Masuk</th>
+              <th colspan="5">MASUKNYA LIMBAH B3 KE TEMPAT PENYIMPANAN</th>
+              <th colspan="4">KELUARNYA LIMBAH B3 DARI TEMPAT PENYIMPANAN</th>
+              <th colspan="2">SISA</th>
+            </tr>
+            <tr>
+              <th>Tanggal Masuk Limbah B3</th>
+              <th>Sumber Limbah B3</th>
+              <th>Jumlah Limbah B3 Masuk (kg)</th>
+              <th>{{ dokLogbook.headerMaksSimpan }}</th>
+              <th>Petugas</th>
+              <th>Tanggal Keluar Limbah</th>
+              <th>Jumlah Limbah B3 (kg)</th>
+              <th>Tujuan Penyerahan</th>
+              <th>Bukti Nomor Dokumen</th>
+              <th>Sisa LB3 Yang Ada di Tempat Penyimpanan (kg)</th>
+              <th>Petugas</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of pg; track e.pengajuanId + '-' + e.itemId; let i = $index) {
+              <tr>
+                <td>{{ i + 1 }}</td>
+                <td>
+                  <!-- Amandemen 2 #9: editable saat status APPROVED + PIC yang mengaudit, sebelum
+                       submit. Amandemen 4 #3: `editableEfektif()`, BUKAN `editable()` mentah -
+                       dipaksa false selama cetak (lihat b3-dokumen.ts), sehingga cabang ini
+                       TIDAK PERNAH menghasilkan <select>/<input> pada hasil print/PDF. -->
+                  @if (editableEfektif()) {
+                    <select class="doc-input" [ngModel]="e.kode" (ngModelChange)="onJenisSelect(e.itemId, $event)">
+                      @for (j of jenisTersedia(e.itemId); track j.kode) {
+                        <option [value]="j.kode">{{ j.nama }} ({{ j.kode }})</option>
+                      }
+                    </select>
+                  } @else {
+                    {{ e.jenis }}
+                  }
+                </td>
+                <td>{{ formatTanggal(e.tanggalMasuk) }}</td>
+                <td>{{ e.sumber }}</td>
+                <td>
+                  @if (editableEfektif()) {
+                    <input type="number" min="0" step="0.1" class="doc-input"
+                           [ngModel]="beratMap()[e.itemId] ?? null"
+                           (ngModelChange)="beratChange.emit({ itemId: e.itemId, value: $event })" />
+                  } @else {
+                    {{ formatKg(e.jumlahMasukKg) }}
+                  }
+                </td>
+                <td>{{ e.maksSimpan ? formatTanggal(e.maksSimpan) : '-' }}</td>
+                <td>{{ e.petugasMasuk }}</td>
+                <td>{{ formatTanggal(e.tanggalKeluar) }}</td>
+                <td>{{ formatKg(e.jumlahKeluarKg) }}</td>
+                <!-- Ronde 6 MAJOR fix: doc-cell-clip = jaring pengaman mutlak (nowrap + ellipsis)
+                     terhadap field bebas tanpa batas panjang keras yang digandakan ke SEMUA
+                     baris (lihat komentar colgroup) - menjamin tinggi baris tabel Logbook
+                     TIDAK PERNAH bertambah berapa pun panjang teksnya, sehingga tabel 20-baris
+                     tidak bisa lagi terpotong 2 halaman fisik oleh nilai realistis apa pun.
+                     title menampilkan teks penuh saat kursor diarahkan (a11y, tidak menyembunyikan
+                     info sepenuhnya di layar meski dipotong visual). -->
+                <td class="doc-cell-clip" [title]="e.tujuan">{{ e.tujuan }}</td>
+                <td class="doc-cell-clip" [title]="e.noManifest">{{ e.noManifest }}</td>
+                <td>{{ formatKg(e.sisaKg) }}</td>
+                <td>{{ e.petugasSisa }}</td>
+              </tr>
+            }
+            <!-- Amandemen 3 #3: baris kosong pengisi sampai genap KAPASITAS_LOGBOOK (20) -
+                 supaya lembar terlihat penuh satu kertas seperti form asli, walau ikut tercetak kosong. -->
+            @for (_ of padding(pg.length); track $index; let pi = $index) {
+              <tr class="doc-row-empty">
+                <td>{{ pg.length + pi + 1 }}</td>
+                <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                <td>&nbsp;</td><td>&nbsp;</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <footer class="doc-foot">
+          <div class="doc-sign">
+            <span>Diperiksa oleh</span>
+            <div class="doc-sign-box"></div>
+            <span>(&hellip;&hellip;) Tgl:</span>
+          </div>
+          <div class="doc-sign">
+            <span>Disetujui oleh</span>
+            <div class="doc-sign-box"></div>
+            <span>(&hellip;&hellip;) Tgl:</span>
+          </div>
+        </footer>
+      </section>
+    }
+  } @else {
+    <div class="doc-empty">Belum ada data logbook. Baris terbentuk otomatis setelah PIC memvalidasi timbang.</div>
+  }
+}
+
+<!-- ==== NERACA - satu dokumen (Bagian I, II, baris penutup, tembusan) ==== -->
+@if (mode() === 'neraca' && neraca(); as n) {
+  @if (toolbar()) {
+    <div class="doc-toolbar">
+      <button type="button" class="doc-btn-print" (click)="cetak()">Unduh PDF</button>
+      <span class="doc-toolbar-note">Membuka dialog cetak browser - pilih "Simpan sebagai PDF" untuk mengunduh.</span>
+    </div>
+  }
+  <section class="b3-doc doc-neraca" [class.doc-neraca-break]="breakBefore()">
+    <table class="doc-head">
+      <tbody>
+        <tr>
+          <td class="doc-head-brand"><img [src]="logoOtsuka" alt="Logo PT Amerta Indah Otsuka" class="doc-logo" /></td>
+          <td class="doc-head-title"><h1 class="doc-title">{{ dokNeraca.judul }}</h1></td>
+          <td class="doc-head-info">
+            <table class="doc-infobox">
+              <tbody>
+                <tr><th>Halaman</th><td>{{ dokNeraca.halaman }}</td></tr>
+                <tr><th>No. Dokumen</th><td>{{ dokNeraca.noDokumen }}</td></tr>
+                <tr><th>Tanggal</th><td>{{ dokNeraca.tanggal }}</td></tr>
+                <tr><th>No. Revisi</th><td>{{ dokNeraca.revisi }}</td></tr>
+                <tr><th>Mengantikan Nomor</th><td>{{ dokNeraca.mengantikanNomor }}</td></tr>
+                <tr><th>Tanggal</th><td>{{ dokNeraca.mengantikanTanggal }}</td></tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table class="doc-meta">
+      <tbody>
+        <tr><th>Bidang Usaha</th><td>{{ dokNeraca.bidangUsaha }}</td></tr>
+        <tr><th>Periode Waktu</th><td>{{ n.periodeLabel }}</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="doc-section-title">Bagian I - Jenis Awal Limbah</h2>
+    <table class="doc-table">
+      <thead>
+        <tr><th>No</th><th>Jenis Awal Limbah</th><th>Jumlah</th><th>Satuan</th><th>CATATAN (Nomor Manifest)</th></tr>
+      </thead>
+      <tbody>
+        @for (r of n.bagianI; track r.kode) {
+          <tr>
+            <td>{{ r.no }}</td>
+            <td>{{ r.jenis }} ({{ r.kode }})</td>
+            <td>{{ formatTon(r.jumlahTon) }}</td>
+            <td>{{ r.satuan }}</td>
+            <td>{{ r.catatan || '-' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="doc-empty-cell">Belum ada transaksi tervalidasi.</td></tr>
+        }
+        <tr class="doc-total">
+          <td colspan="2">TOTAL (A)</td>
+          <td>{{ formatTon(n.totalATon) }}</td>
+          <td>Ton</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="doc-section-title">Bagian II - Perlakuan</h2>
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>PERLAKUAN</th><th>JUMLAH</th><th>SATUAN</th>
+          <th>JENIS LIMBAH YANG DIKELOLA</th>
+          <th colspan="3">PERIZINAN LIMBAH B3 DARI KLH</th>
+        </tr>
+        <tr><th colspan="4"></th><th>ADA</th><th>TIDAK ADA</th><th>KADALUARSA</th></tr>
+      </thead>
+      <tbody>
+        @for (k of n.perlakuan; track k.kategori) {
+          @for (b of k.baris; track b.jenis + b.kode; let i = $index) {
+            <tr>
+              @if (i === 0) {
+                <td [attr.rowspan]="k.baris.length">{{ k.kategori }}<span class="doc-sub">{{ k.subLabel }}</span></td>
+                <td [attr.rowspan]="k.baris.length">{{ formatTon(k.jumlahTon) }}</td>
+                <td [attr.rowspan]="k.baris.length">Ton</td>
+              }
+              <td>{{ b.jenis }}@if (b.kode) { <span> ({{ b.kode }})</span> }</td>
+              <td>@if (b.izinKlh === 'ADA') { <span>&#10003;</span> }</td>
+              <td></td>
+              <td></td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+
+    <table class="doc-table doc-table-penutup">
+      <tbody>
+        <tr class="doc-total"><td>TOTAL (B)</td><td>{{ formatTon(n.totalBTon) }}</td><td>Ton</td></tr>
+        <tr><td>RESIDU (C)</td><td>{{ formatTon(n.residuCTon) }}</td><td>Ton</td></tr>
+        <tr><td>JUMLAH LIMBAH YANG BELUM TERKELOLA (D)</td><td>{{ formatTon(n.belumTerkelolaDTon) }}</td><td>Ton</td></tr>
+        <tr><td>TOTAL JUMLAH LIMBAH (C+D)</td><td>{{ formatTon(n.totalCDTon) }}</td><td>Ton</td></tr>
+        <tr class="doc-total">
+          <td>KINERJA PENGELOLAAN LB3 SELAMA PERIODE SKALA WAKTU PENAATAN</td>
+          <td colspan="2">{{ formatPersen(n.kinerjaPersen) }} %</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <footer class="doc-foot doc-foot-neraca">
+      <div class="doc-sign">
+        <span>Dilaporkan Oleh :</span>
+        <div class="doc-sign-box"></div>
+        <strong>{{ penandatangan.dilaporkan.nama }}</strong>
+        <span>{{ penandatangan.dilaporkan.jabatan }}</span>
+      </div>
+      <div class="doc-sign">
+        <span>{{ penandatangan.kota }}, {{ formatTanggal(n.tanggalLaporan) }}</span>
+        <span>Mengetahui :</span>
+        <div class="doc-sign-box"></div>
+        <strong>{{ penandatangan.mengetahui.nama }}</strong>
+        <span>{{ penandatangan.mengetahui.jabatan }}</span>
+      </div>
+    </footer>
+
+    <div class="doc-tembusan">
+      <strong>Tembusan :</strong>
+      <ol>
+        @for (t of tembusan; track t) { <li>{{ t }}</li> }
+      </ol>
+    </div>
+  </section>
+}

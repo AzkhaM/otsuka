@@ -1,0 +1,167 @@
+<div class="page-head">
+  <div>
+    <h2>Pemantauan Inspeksi & Sertifikasi</h2>
+    <p>Monitoring inspeksi P3GK melalui barcode dan pengingat batas sertifikasi ulang peralatan.</p>
+  </div>
+</div>
+
+<div class="tabs">
+  <button type="button" class="tab-btn" [class.active]="activeTab() === 'p3gk'" (click)="setTab('p3gk')">
+    Inspeksi P3GK (Barcode)
+  </button>
+  <button type="button" class="tab-btn" [class.active]="activeTab() === 'certification'" (click)="setTab('certification')">
+    Sertifikasi Alat
+  </button>
+</div>
+
+@if (activeTab() === 'p3gk') {
+  <div class="stats">
+    <div class="stat-card">
+      <span class="stat-label">Total Unit P3GK</span>
+      <span class="stat-value">{{ unitCounts().total }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Status OK</span>
+      <span class="stat-value success">{{ unitCounts().ok }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Perlu Inspeksi</span>
+      <span class="stat-value warning">{{ unitCounts().perluInspeksi }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Overdue</span>
+      <span class="stat-value danger">{{ unitCounts().overdue }}</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="scan-row">
+      <label class="form-panel-inline">
+        <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Simulasi Scan Barcode P3GK</div>
+        <input
+          type="text"
+          [ngModel]="scanInput()"
+          (ngModelChange)="scanInput.set($event)"
+          (keyup.enter)="scanBarcode()"
+          placeholder="cth: P3GK-A-002"
+          class="search-input"
+        />
+      </label>
+      <button type="button" class="btn-primary" (click)="scanBarcode()">
+        <app-icon name="scan" [size]="16" />
+        Scan
+      </button>
+    </div>
+    @if (scanLog().length) {
+      <div class="scan-log">
+        <strong>Riwayat scan terbaru:</strong>
+        <div>
+          @for (line of scanLog(); track line) {
+            <div>{{ line }}</div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Barcode</th>
+            <th>Lokasi</th>
+            <th>Inspeksi Terakhir</th>
+            <th>Inspeksi Berikutnya</th>
+            <th>Petugas</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of units(); track u.id) {
+            <tr>
+              <td class="cell-title">{{ u.barcodeId }}</td>
+              <td>{{ u.location }}</td>
+              <td>{{ u.lastInspection }}</td>
+              <td>{{ u.nextInspection }}</td>
+              <td>{{ u.inspector }}</td>
+              <td>
+                <span
+                  class="badge"
+                  [class.badge-success]="u.status === 'OK'"
+                  [class.badge-warning]="u.status === 'Perlu Inspeksi'"
+                  [class.badge-danger]="u.status === 'Overdue'"
+                >
+                  {{ u.status }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+@if (activeTab() === 'certification') {
+  @if (certAlertCounts().overdue || certAlertCounts().urgent) {
+    <div class="banner" [class.banner-danger]="certAlertCounts().overdue" [class.banner-warning]="!certAlertCounts().overdue">
+      <app-icon name="alert-triangle" [size]="18" />
+      <span>
+        {{ certAlertCounts().overdue }} alat sudah kedaluwarsa dan {{ certAlertCounts().urgent }} alat perlu segera disertifikasi ulang.
+        Segera hubungi departemen terkait.
+      </span>
+    </div>
+  }
+
+  <div class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nama Alat</th>
+            <th>Jenis</th>
+            <th>No. Sertifikat</th>
+            <th>Departemen</th>
+            <th>Tanggal Kedaluwarsa</th>
+            <th>Sisa Waktu</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (eq of equipmentRows(); track eq.id) {
+            <tr>
+              <td class="cell-title">{{ eq.name }}</td>
+              <td>{{ eq.type }}</td>
+              <td>{{ eq.certNumber }}</td>
+              <td>{{ eq.department }}</td>
+              <td>{{ eq.expiryDate | date: 'dd MMM yyyy' }}</td>
+              <td>
+                @if (eq.daysRemaining < 0) {
+                  {{ -eq.daysRemaining }} hari lewat
+                } @else if (eq.daysRemaining === 0) {
+                  Hari ini
+                } @else if (eq.daysRemaining === 1) {
+                  Besok
+                } @else {
+                  {{ eq.daysRemaining }} hari lagi
+                }
+              </td>
+              <td>
+                <span
+                  class="badge"
+                  [class.badge-danger]="eq.status === 'Kedaluwarsa' || eq.status === 'Mendesak'"
+                  [class.badge-warning]="eq.status === 'Perlu Perhatian'"
+                  [class.badge-info]="eq.status === 'Segera'"
+                  [class.badge-success]="eq.status === 'Aman'"
+                >
+                  {{ eq.status }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

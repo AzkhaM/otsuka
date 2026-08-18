@@ -1,0 +1,346 @@
+<div class="page-head">
+  <div>
+    <h2>Limbah B3 - Alur Pembuangan</h2>
+    <p>Pengajuan, approval berjenjang, dan timbang limbah B3 lokasi Sukabumi. Prototipe logika alur - data tersimpan sementara di sesi ini.</p>
+  </div>
+</div>
+
+<!-- ==== MODE DEMO: ROLE SWITCHER LOKAL (AC-29) ==== -->
+<div class="demo-bar">
+  <strong>Mode Demo - lihat sebagai:</strong>
+  <div class="role-btns">
+    <button type="button" class="role-btn" [class.active]="peranAktif() === 'USER'" (click)="gantiPeran('USER')">User</button>
+    <button type="button" class="role-btn" [class.active]="peranAktif() === 'SUPERVISOR'" (click)="gantiPeran('SUPERVISOR')">Supervisor</button>
+    <button type="button" class="role-btn" [class.active]="peranAktif() === 'PIC'" (click)="gantiPeran('PIC')">PIC (Pak Ruli)</button>
+  </div>
+  <span class="demo-note">Alat demo prototipe, bukan sistem login.</span>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><span class="stat-label">Total Pengajuan</span><span class="stat-value">{{ statistik().total }}</span></div>
+  <div class="stat-card"><span class="stat-label">Menunggu Supervisor</span><span class="stat-value warning">{{ statistik().menungguSup }}</span></div>
+  <div class="stat-card"><span class="stat-label">Menunggu PIC</span><span class="stat-value warning">{{ statistik().menungguPic }}</span></div>
+  <div class="stat-card"><span class="stat-label">Siap Ditimbang</span><span class="stat-value">{{ statistik().terjadwal }}</span></div>
+  <div class="stat-card"><span class="stat-label">Selesai</span><span class="stat-value success">{{ statistik().selesai }}</span></div>
+</div>
+
+<!-- Amandemen 2 poin 7: tab "Logbook" dan "Neraca" dihapus - dokumen sekarang tampil
+     langsung di detail satu pengajuan (lihat blok @if (terpilih(); as p) di bawah). -->
+<div class="tabs">
+  @if (peranAktif() === 'USER') {
+    <button type="button" class="tab-btn" [class.active]="tabAktif() === 'ajukan'" (click)="bukaTab('ajukan')">Ajukan Pembuangan</button>
+  }
+  <button type="button" class="tab-btn" [class.active]="tabAktif() === 'daftar'" (click)="bukaTab('daftar')">Daftar Pengajuan</button>
+  <button type="button" class="tab-btn" [class.active]="tabAktif() === 'notifikasi'" (click)="bukaTab('notifikasi')">Notifikasi ({{ notifikasi().length }})</button>
+</div>
+
+<!-- ==== TAB: AJUKAN / PERBAIKI ==== -->
+@if (tabAktif() === 'ajukan' && peranAktif() === 'USER') {
+  <div class="panel form-panel">
+    <h3 class="panel-title">{{ ajukanUlangId() ? 'Perbaiki Pengajuan ' + nomorAjukanUlang() : 'Ajukan Pembuangan Limbah B3' }}</h3>
+    @if (ajukanUlangId() && alasanTolakSebelumnya()) {
+      <div class="banner banner-danger">
+        <app-icon name="alert-triangle" [size]="16" />
+        Ditolak: {{ alasanTolakSebelumnya() }}
+      </div>
+    }
+
+    <div class="form-grid">
+      <label>Lokasi
+        <input type="text" [(ngModel)]="formHeader.lokasi" placeholder="cth: Sukabumi" />
+      </label>
+      <label>Pelaksana/Pengangkut
+        <input type="text" [(ngModel)]="formHeader.pelaksana" placeholder="cth: PT PLIB" />
+      </label>
+      <label>Diajukan oleh
+        <input type="text" [(ngModel)]="formHeader.diajukanOleh" placeholder="cth: Feri Aryanto" />
+      </label>
+      <label>Tanggal Pengajuan
+        <input type="date" [(ngModel)]="formHeader.tanggalPengajuan" />
+      </label>
+      <label class="span-2">Usulan Tanggal Pembuangan (opsional)
+        <input type="date" [(ngModel)]="formHeader.usulanTanggalBuang" />
+      </label>
+    </div>
+
+    <h3 class="panel-title panel-title-spaced">Pilih Limbah</h3>
+    <app-waste-picker [nilaiAwal]="nilaiAwalPicker()" (pilihanChange)="formPilihan = $event" />
+
+    <!-- Amandemen 2 poin 4: perkiraan berat opsional per item, DI LUAR app-waste-picker
+         (file itu tidak disentuh). Render dari formPilihan.items (sudah tersedia lewat
+         output pilihanChange). Nilai masuk ke ItemLimbah.beratKg saat submit. -->
+    @if (formPilihan.items.length) {
+      <h3 class="panel-title panel-title-spaced">Perkiraan Berat (opsional)</h3>
+      <p class="panel-sub">Isi jika sudah tahu perkiraannya - PIC akan mengoreksi saat proses timbang di lapangan.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Jenis</th><th>Kode</th><th>Sumber</th><th>Perkiraan Berat (kg)</th></tr></thead>
+          <tbody>
+            @for (it of formPilihan.items; track it.id) {
+              <tr>
+                <td class="cell-title">{{ it.jenis }}<div class="cell-sub">{{ it.departemen }}</div></td>
+                <td>{{ it.kode }}</td>
+                <td>{{ it.sumber }}</td>
+                <td>
+                  <input class="input-sm" type="number" min="0" step="0.1"
+                         [ngModel]="formBeratPerkiraan[it.id] ?? null"
+                         (ngModelChange)="formBeratPerkiraan[it.id] = $event"
+                         placeholder="opsional" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (errors().length) {
+      <ul class="errors-box">
+        @for (e of errors(); track e) { <li>{{ e }}</li> }
+      </ul>
+    }
+
+    <div class="form-actions">
+      @if (ajukanUlangId()) {
+        <button type="button" class="btn-ghost" (click)="batalAjukanUlang()">Batal</button>
+        <button type="button" class="btn-primary" (click)="ajukanUlang()">Ajukan Ulang</button>
+      } @else {
+        <button type="button" class="btn-primary" (click)="ajukan()">
+          <app-icon name="plus" [size]="16" />
+          Ajukan
+        </button>
+      }
+    </div>
+  </div>
+}
+
+<!-- ==== TAB: DAFTAR (list atau detail) ==== -->
+@if (tabAktif() === 'daftar') {
+  @if (terpilih(); as p) {
+    <div class="panel">
+      <button type="button" class="link-btn" (click)="kembaliKeDaftar()">&larr; Kembali ke daftar</button>
+
+      <div class="page-head detail-head">
+        <div>
+          <h2>{{ p.nomor }}</h2>
+          <p>{{ p.header.lokasi }} - diajukan oleh {{ p.header.diajukanOleh }} pada {{ formatTanggal(p.header.tanggalPengajuan) }}</p>
+        </div>
+        <span class="badge" [class]="badgeStatus(p.status)">{{ labelStatus(p.status) }}</span>
+      </div>
+
+      <dl class="detail-grid">
+        <div><dt>Pelaksana/Pengangkut</dt><dd>{{ p.header.pelaksana }}</dd></div>
+        <div><dt>Usulan Tanggal Buang</dt><dd>{{ formatTanggal(p.header.usulanTanggalBuang) }}</dd></div>
+        @if (p.pic?.tanggalJadwal) {
+          <div><dt>Jadwal Timbang</dt><dd>{{ formatTanggal(p.pic!.tanggalJadwal) }} {{ p.pic!.jamJadwal }} WIB</dd></div>
+        }
+      </dl>
+
+      @if (p.lainnya) {
+        <p><strong>Catatan Lainnya:</strong> {{ p.lainnya }}</p>
+      }
+
+      <!-- Amandemen 2 poin 6: field bersama (berlaku untuk SELURUH item) di PALING ATAS
+           panel Tahap 4, sebelum tabel per-item.
+           Amandemen 4 #2 fix: dibungkus ".form-panel" - class ini SEBELUMNYA tidak ada di
+           sini (container terluar cuma ".panel"), jadi ".form-panel .form-grid"/".form-panel
+           label"/"input" di feature-page.css (display:grid, gap kolom, styling label/input)
+           TIDAK PERNAH aktif - <label> jatuh ke default inline HTML, field terlihat mepet
+           tak beraturan. Scope HANYA di blok ini (bukan seluruh ".panel" pembungkus detail),
+           supaya tidak menyentuh elemen lain (dl/riwayat/dst) di luar blok ini. -->
+      @if (editableSekarang()) {
+        <h3 class="panel-title panel-title-spaced">Timbang & Validasi</h3>
+        <p class="panel-sub">Field berikut berlaku untuk seluruh item pada pengajuan ini - isi sebelum mengoreksi tabel dokumen di bawah.</p>
+        <div class="form-panel">
+          <div class="form-grid form-grid-spaced">
+            <label>Tanggal Timbang
+              <input type="date" [(ngModel)]="formTimbang.tanggalTimbang" />
+            </label>
+            <label>Tanggal Pembuangan
+              <input type="date" [(ngModel)]="formTimbang.tanggalBuang" />
+            </label>
+            <label>Tujuan Penyerahan
+              <!-- Ronde 6 fix MAJOR: maxlength 40 - nilai ini disalin identik ke SEMUA baris
+                   Logbook (field bersama satu-pengajuan, bukan per-item, lihat b3-waste-logbook.ts
+                   bangunLogbook()); dipilih supaya nama vendor B3 realistis (mis. "PT Prasadha
+                   Pamunah Limbah Industri", 36 char) tetap muat tanpa terpotong ellipsis - lihat
+                   03-frontend.md Bagian 13 untuk hasil pengujian PDF sungguhan per panjang teks. -->
+              <input type="text" [(ngModel)]="formTimbang.tujuan" placeholder="cth: PT PLIB" maxlength="40" />
+            </label>
+            <label>Nomor Manifest
+              <input type="text" [(ngModel)]="formTimbang.noManifest" placeholder="cth: MNF-2608-001" maxlength="40" />
+            </label>
+          </div>
+        </div>
+      }
+
+      <!-- Amandemen 2 poin 7/8/9: dokumen resmi (Logbook + Neraca) digabung ke sini,
+           di-scope hanya ke pengajuan ini. Editable menyatu dengan status: satu tampilan,
+           dua mode (readonly / input), tergantung editableSekarang(). -->
+      <h3 class="panel-title panel-title-spaced">Dokumen Logbook & Neraca</h3>
+      <p class="panel-sub">Replika resmi FR/K3L/006/01 & FR/K3L/006/02/1 untuk pengajuan ini saja.</p>
+      <!-- Amandemen 3 #1: satu wrapper cetak membungkus KEDUA dokumen - lihat komentar
+           body.b3-printing .b3-print-root di b3-dokumen.css untuk alasan fix bug print. -->
+      <div class="b3-print-root">
+        <app-b3-dokumen
+          mode="logbook"
+          [blok]="dokBlok(p)"
+          [editable]="editableSekarang()"
+          [items]="p.items"
+          [beratMap]="formTimbang.berat"
+          (beratChange)="onDokBerat($event)"
+          (jenisChange)="onDokJenis($event)"
+        />
+        <!-- Ronde 5 fix BLOCKER: break-before hanya bila Logbook pengajuan ini benar-benar
+             mencetak konten (dokBlok(p) tidak kosong) - lihat komentar breakBefore di b3-dokumen.ts. -->
+        <app-b3-dokumen mode="neraca" [neraca]="dokNeraca(p)" [toolbar]="false" [breakBefore]="dokBlok(p).length > 0" />
+      </div>
+
+      @if (editableSekarang()) {
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="formTimbang.pernyataan" />
+          Saya menyatakan data timbang di atas telah sesuai kondisi fisik di lapangan.
+        </label>
+        @if (errors().length) {
+          <ul class="errors-box">
+            @for (e of errors(); track e) { <li>{{ e }}</li> }
+          </ul>
+        }
+        <div class="form-actions">
+          <button type="button" class="btn-primary" (click)="kirimTimbang()">Validasi</button>
+        </div>
+      }
+
+      @if (p.status === 'WEIGHED') {
+        <p class="readonly-note">
+          <app-icon name="check-square" [size]="14" />
+          Data terkunci - hasil timbang final, tidak dapat diubah.
+        </p>
+      }
+
+      <ul class="riwayat">
+        @for (r of p.riwayat; track r.waktu + r.aksi) {
+          <li>
+            <div class="riw-head">{{ r.aksi }} - {{ r.oleh }} ({{ r.peran }})</div>
+            <div class="riw-meta">{{ formatWaktu(r.waktu) }}</div>
+            @if (r.catatan) { <div class="riw-catatan">{{ r.catatan }}</div> }
+          </li>
+        }
+      </ul>
+
+      @if (!editableSekarang() && errors().length) {
+        <ul class="errors-box">
+          @for (e of errors(); track e) { <li>{{ e }}</li> }
+        </ul>
+      }
+      @if (infoAksi()) { <p class="info-box">{{ infoAksi() }}</p> }
+
+      <!-- USER: perbaiki & ajukan ulang -->
+      @if (aksiTersedia().includes('RESUBMIT')) {
+        <div class="form-actions">
+          <button type="button" class="btn-primary" (click)="mulaiAjukanUlang(p)">Perbaiki & Ajukan Ulang</button>
+        </div>
+      }
+
+      <!-- SUPERVISOR: setujui / tolak -->
+      @if (aksiTersedia().includes('SUP_APPROVE')) {
+        <div class="panel form-panel action-panel">
+          <h3 class="panel-title">Keputusan Supervisor</h3>
+          <label>Alasan Penolakan (wajib bila menolak)
+            <input type="text" [ngModel]="formAlasan()" (ngModelChange)="formAlasan.set($event)" placeholder="Alasan penolakan" />
+          </label>
+          <div class="form-actions">
+            <button type="button" class="btn-ghost" (click)="tolakSupervisor()">Tolak</button>
+            <button type="button" class="btn-primary" (click)="setujuiSupervisor()">Setujui</button>
+          </div>
+        </div>
+      }
+
+      <!-- PIC: jadwal + setujui / tolak -->
+      @if (aksiTersedia().includes('PIC_APPROVE')) {
+        <div class="panel form-panel action-panel">
+          <h3 class="panel-title">Jadwalkan & Keputusan PIC</h3>
+          <div class="form-grid">
+            <label>Tanggal Jadwal Timbang
+              <input type="date" [(ngModel)]="formJadwal.tanggal" />
+            </label>
+            <label>Jam Jadwal Timbang
+              <input type="time" [(ngModel)]="formJadwal.jam" />
+            </label>
+            <label class="span-2">Alasan Penolakan (wajib bila menolak)
+              <input type="text" [ngModel]="formAlasan()" (ngModelChange)="formAlasan.set($event)" placeholder="Alasan penolakan" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-ghost" (click)="tolakPic()">Tolak</button>
+            <button type="button" class="btn-primary" (click)="setujuiPic()">Jadwalkan & Setujui</button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    @if (antrean().length) {
+      <div class="panel">
+        <h3 class="panel-title">Perlu Tindakan Anda</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nomor</th><th>Diajukan oleh</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              @for (p of antrean(); track p.id) {
+                <tr>
+                  <td class="cell-title">{{ p.nomor }}</td>
+                  <td>{{ p.header.diajukanOleh }}</td>
+                  <td><span class="badge" [class]="badgeStatus(p.status)">{{ labelStatus(p.status) }}</span></td>
+                  <td class="actions"><button type="button" class="link-btn" (click)="bukaDetail(p.id)">Lihat</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+    <div class="panel">
+      <h3 class="panel-title">Semua Pengajuan</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nomor</th><th>Diajukan oleh</th><th>Tanggal</th><th>Jumlah Item</th><th>Total Berat</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            @for (p of pengajuan(); track p.id) {
+              <tr>
+                <td class="cell-title">{{ p.nomor }}</td>
+                <td>{{ p.header.diajukanOleh }}</td>
+                <td>{{ formatTanggal(p.header.tanggalPengajuan) }}</td>
+                <td>{{ p.items.length }}</td>
+                <td>{{ totalBerat(p) || '-' }}</td>
+                <td><span class="badge" [class]="badgeStatus(p.status)">{{ labelStatus(p.status) }}</span></td>
+                <td class="actions"><button type="button" class="link-btn" (click)="bukaDetail(p.id)">Lihat</button></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="empty-row">Belum ada pengajuan.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+}
+
+<!-- ==== TAB: NOTIFIKASI ==== -->
+@if (tabAktif() === 'notifikasi') {
+  <div class="panel">
+    <h3 class="panel-title">Simulasi Email - tidak ada email yang benar-benar dikirim</h3>
+    <p class="panel-sub">Setiap perpindahan status mencatat notifikasi berikut sebagai simulasi in-app, bukan pengiriman email sungguhan.</p>
+    @for (n of notifikasiUrut(); track n.id) {
+      <div class="notif-item">
+        <div class="notif-top">
+          <span><span class="badge badge-muted">{{ n.kepadaPeran }}</span> {{ n.kepadaNama }} ({{ n.kepadaEmail }}) - {{ n.nomorPengajuan }}</span>
+          <span>{{ formatWaktu(n.waktu) }}</span>
+        </div>
+        <div class="notif-subjek">{{ n.subjek }}</div>
+        <div class="notif-isi">{{ n.isi }}</div>
+      </div>
+    } @empty {
+      <p class="empty-row">Belum ada notifikasi.</p>
+    }
+  </div>
+}

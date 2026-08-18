@@ -1,0 +1,160 @@
+/* Style dokumen cetak Logbook & Neraca. ViewEncapsulation.None (ADR-7) - file ini GLOBAL,
+   TIDAK ter-enkapsulasi Angular. SELURUH selektor WAJIB bernamespace (kelas berawalan
+   "doc-" atau "b3-doc", atau body.b3-printing) - DILARANG selektor elemen telanjang
+   (table{}, h1{}, dst) karena akan membocorkan style ke seluruh menu lain (R-9). Warna
+   dibuat statis (bukan var(--text) dsb) supaya dokumen selalu tercetak hitam-di-atas-putih
+   terlepas dari tema gelap aplikasi. */
+
+.doc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.doc-btn-print {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.doc-toolbar-note {
+  font-size: 12.5px;
+  color: #6b7280;
+}
+
+.b3-doc {
+  background: #fff;
+  color: #111;
+  border: 1px solid #333;
+  padding: 10px 16px;
+  margin-bottom: 24px;
+  font-size: 11.5px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Amandemen 2 #1: header replika border tabel nyata (bukan flex tanpa garis) - 3 sel
+   bersebelahan: brand | judul | info-box, persis pola tabel Excel asli.
+   Ronde 5 MAJOR fix: padding dipadatkan (6px 10px -> 3px 8px) supaya tabel Logbook
+   20-baris + header + footer muat 1 halaman fisik A4 landscape - lihat 03-frontend.md. */
+.doc-head { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 0; }
+.doc-head td { border: 1px solid #333; padding: 3px 8px; vertical-align: middle; }
+.doc-head-brand { width: 24%; text-align: center; }
+.doc-head-brand span { display: block; font-size: 11px; }
+/* Amandemen 4 #1: logo asli (rasio ~249:127) - lebar tetap, height:auto menjaga proporsi
+   (tidak distorsi). Logo sudah memuat teks "PT Amerta Indah Otsuka" sendiri, jadi TIDAK
+   diduplikasi sebagai teks terpisah (lihat b3-dokumen.html). */
+.doc-logo { display: block; width: 82px; height: auto; margin: 0 auto 2px; }
+.doc-head-title { width: 48%; text-align: center; }
+.doc-head-info { width: 28%; padding: 0; }
+.doc-title { font-size: 13px; margin: 0; text-transform: uppercase; }
+.doc-infobox { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+.doc-infobox th, .doc-infobox td { border: 1px solid #333; padding: 1px 6px; text-align: left; white-space: nowrap; }
+.doc-infobox th { background: #f2f2f2; font-weight: 600; }
+
+/* Amandemen 2 #1: baris Area / Karakteristik Limbah (Logbook) dan Bidang Usaha / Periode
+   (Neraca) juga bergaris, menyambung langsung di bawah .doc-head. */
+.doc-meta { width: 100%; border-collapse: collapse; margin: 0 0 6px; font-size: 10.5px; }
+.doc-meta th, .doc-meta td { border: 1px solid #333; border-top: none; padding: 2px 8px; text-align: left; font-weight: 600; }
+.doc-meta th { background: #f2f2f2; width: 160px; }
+
+/* Amandemen 3 #2: judul per-blok (.doc-blok-title) dihapus dari markup - Logbook sekarang
+   satu tabel gabungan tanpa judul per-kode. .doc-section-title tetap dipakai Neraca. */
+.doc-section-title { font-size: 12.5px; margin: 8px 0 4px; text-transform: uppercase; }
+
+/* Amandemen 2 #3: isi sel tabel di-tengahkan (terutama kolom angka/tanggal).
+   Ronde 5 MAJOR fix: padding sel & line-height dipadatkan supaya 20 baris data + 2
+   baris header tabel tidak melebihi tinggi kertas cetak - diukur dengan page.pdf()
+   sungguhan (bukan hanya getBoundingClientRect), lihat 03-frontend.md Bagian 12. */
+.doc-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 9.5px; }
+.doc-table th, .doc-table td { border: 1px solid #333; padding: 1.5px 5px; vertical-align: middle; text-align: center; line-height: 1.15; }
+/* Ronde 5 MAJOR fix: lihat colgroup di b3-dokumen.html - width tetap per kolom (bukan
+   auto) supaya sel data (terutama Bukti Nomor Dokumen) tidak bungkus 2 baris di 20 baris
+   Logbook. word-break jaga-jaga bila suatu saat ada nilai jauh lebih panjang dari biasa. */
+.doc-table-logbook { table-layout: fixed; }
+.doc-table-logbook td { word-break: break-word; }
+/* Ronde 6 MAJOR fix: tujuan/noManifest = field bersama, SAMA di semua baris, bebas tanpa
+   batas keras (maxlength 40 di b3-waste.html cuma penjaga input). Dipotong 1 baris (bukan
+   word-break) -> tinggi baris tabel 20-baris TETAP konstan berapa pun panjangnya, bug
+   "Logbook > 1 halaman fisik" tidak bisa muncul lagi lewat nilai realistis apa pun. */
+.doc-table-logbook td.doc-cell-clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-table thead th { background: #f2f2f2; font-weight: 600; }
+/* Amandemen 4 #2 polish: baris header GRUP (mis. "MASUKNYA LIMBAH B3..."/"PERIZINAN...")
+   dibedakan sedikit lebih gelap dari baris header kolom di bawahnya - hierarki visual
+   lebih jelas saat di-export PDF, konsisten Logbook & Neraca (keduanya pakai .doc-table). */
+.doc-table thead tr:first-child th { background: #e2e8f0; }
+.doc-total td { font-weight: 700; background: #f7f7f7; }
+.doc-sub { display: block; font-size: 9px; font-weight: 400; color: #444; }
+.doc-table-penutup { max-width: 560px; }
+.doc-empty-cell { color: #666; padding: 10px; }
+
+/* Amandemen 2 #9: sel editable (jenis/berat) saat status APPROVED + PIC mengaudit. */
+.doc-input { width: 100%; min-width: 90px; border: 1px solid #999; padding: 1px 4px; font-size: 9.5px; font-family: inherit; text-align: center; box-sizing: border-box; }
+select.doc-input { min-width: 130px; }
+
+.doc-foot { display: flex; justify-content: space-between; gap: 24px; margin-top: 8px; font-size: 10.5px; }
+.doc-sign { display: flex; flex-direction: column; gap: 2px; min-width: 200px; }
+.doc-sign-box { height: 26px; border-bottom: 1px solid #333; }
+.doc-foot-neraca .doc-sign:last-child { text-align: right; }
+
+.doc-tembusan { margin-top: 8px; font-size: 10px; }
+.doc-tembusan ol { margin: 2px 0 0; padding-left: 18px; }
+
+.doc-empty { padding: 24px; text-align: center; color: #6b7280; }
+
+@media print {
+  /* Ronde 5 fix tambahan (ditemukan saat verifikasi ulang skenario pra-WEIGHED dengan
+     page.pdf() sungguhan): `visibility: hidden` saja TIDAK mengeluarkan elemen dari alur
+     dokumen - seluruh chrome aplikasi (sidebar/topbar/panel lain di luar .b3-doc) tetap
+     memakan tinggi normal-flow meski tak terlihat, dan kalau totalnya melebihi satu
+     halaman cetak, browser menambah halaman KOSONG ekstra di ekor PDF untuk menampungnya.
+     height:0 + overflow:hidden meniadakan kontribusi tinggi itu; `.b3-print-root`/`.b3-doc`
+     (dan seluruh isinya) dikembalikan ke height:auto/overflow:visible supaya tidak ikut
+     terpangkas - aman karena `.b3-print-root` position:absolute terhadap initial containing
+     block (tidak ada ancestor lain di aplikasi ini yang position selain static, dikonfirmasi
+     nol match `position: (relative|absolute|fixed)` di luar `.topbar` yang sticky namun bukan
+     ancestor dari `.b3-print-root` - lihat 03-frontend.md). */
+  body.b3-printing * { visibility: hidden !important; height: 0 !important; min-height: 0 !important; overflow: hidden !important; }
+  body.b3-printing .b3-print-root,
+  body.b3-printing .b3-doc,
+  body.b3-printing .b3-doc * { visibility: visible !important; height: auto !important; overflow: visible !important; }
+  /* Ronde 7 BLOCKER fix: wildcard di atas (`body.b3-printing .b3-doc *`) menang atas
+     overflow:hidden di .doc-cell-clip (baris 80) saat print sungguhan karena !important vs
+     tanpa !important. Specificity di bawah IDENTIK (2 kelas+1 elemen) -> menang murni via
+     SOURCE ORDER. WAJIB tetap SETELAH rule wildcard. Bukti: 03-frontend.md Bagian 14. */
+  body.b3-printing .doc-cell-clip {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  /* Amandemen 3 #1 (fix bug print): position:absolute pindah dari SETIAP `.b3-doc` (yang
+     dulu membuat Logbook & Neraca bertumpuk persis di posisi sama, karena keduanya sekarang
+     berdampingan dalam satu detail pengajuan) ke SATU wrapper `.b3-print-root` (dipasang di
+     b3-waste.html membungkus kedua <app-b3-dokumen>). Wrapper inilah yang dikeluarkan dari
+     alur elemen tersembunyi lain - di dalamnya tiap `.b3-doc` tetap statis, bertumpuk
+     vertikal berurutan seperti div biasa, dipisah break-before:page antar dokumen. */
+  body.b3-printing .b3-print-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  body.b3-printing .b3-doc {
+    margin: 0;
+    border: none;
+    break-inside: auto;
+  }
+  /* Setiap dokumen (halaman Logbook berikutnya, atau Neraca) mulai di kertas baru.
+     Ronde 5 fix BLOCKER: `.doc-neraca` TIDAK lagi dipaksa break-before tanpa syarat -
+     kelas `.doc-neraca-break` hanya disematkan (lihat b3-dokumen.ts `breakBefore` input)
+     ketika Logbook pengajuan yang sama benar-benar mencetak `.b3-doc` sebelumnya. Untuk
+     status pra-WEIGHED (Logbook kosong -> .doc-empty, bukan .b3-doc), Neraca tetap mulai
+     di alur normal wrapper (halaman pertama), tidak ada halaman kosong di depannya. */
+  body.b3-printing .doc-logbook + .doc-logbook,
+  body.b3-printing .doc-neraca-break { break-before: page; }
+  body.b3-printing .doc-table { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  @page { size: A4 landscape; margin: 8mm; }
+}

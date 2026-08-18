@@ -1,0 +1,86 @@
+<div class="wp-grid">
+  @for (dept of departemen; track dept.id) {
+    <div class="wp-card" [class.wp-card-active]="deptDicentang(dept.id)">
+      <label class="wp-card-head">
+        <input type="checkbox" [checked]="deptDicentang(dept.id)" (change)="toggleDept(dept)" />
+        <span>
+          <span class="wp-card-title">{{ dept.nama }}</span>
+          <p class="wp-card-desc">{{ dept.deskripsi }}</p>
+        </span>
+      </label>
+
+      @if (deptDicentang(dept.id)) {
+        <div class="wp-anak">
+          @if (dept.sumber.length === 1) {
+            <div class="wp-sumber-tunggal">Sumber: {{ dept.sumber[0].kode }} - {{ dept.sumber[0].nama }}</div>
+            <div class="wp-jenis-grid">
+              @for (j of dept.sumber[0].jenis; track j.kode) {
+                <label class="wp-jenis-item">
+                  <input
+                    type="checkbox"
+                    [checked]="jenisDicentang(dept.id, dept.sumber[0].kode, j.kode)"
+                    (change)="toggleJenis(dept.id, dept.sumber[0].kode, j.kode)"
+                  />
+                  {{ j.nama }} <span class="kode-chip">{{ j.kode }}</span>
+                </label>
+              }
+            </div>
+            <div class="wp-ringkasan">{{ jenisTerpilihCount(dept.id, dept.sumber[0].kode) }} jenis dipilih</div>
+          } @else {
+            <div class="wp-sumber-chip">
+              @for (s of dept.sumber; track s.kode) {
+                <label class="wp-chip">
+                  <input type="checkbox" [checked]="sumberDicentang(dept.id, s.kode)" (change)="toggleSumber(dept.id, s.kode)" />
+                  {{ s.kode }}
+                </label>
+              }
+            </div>
+            @for (s of dept.sumber; track s.kode) {
+              @if (sumberDicentang(dept.id, s.kode)) {
+                <div class="wp-anak wp-anak-2">
+                  <div class="wp-sumber-label">{{ s.kode }} - {{ s.nama }}</div>
+                  <div class="wp-jenis-grid">
+                    @for (j of s.jenis; track j.kode) {
+                      <label class="wp-jenis-item">
+                        <input
+                          type="checkbox"
+                          [checked]="jenisDicentang(dept.id, s.kode, j.kode)"
+                          (change)="toggleJenis(dept.id, s.kode, j.kode)"
+                        />
+                        {{ j.nama }} <span class="kode-chip">{{ j.kode }}</span>
+                      </label>
+                    }
+                  </div>
+                  <div class="wp-ringkasan">{{ jenisTerpilihCount(dept.id, s.kode) }} jenis dipilih</div>
+                </div>
+              }
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <div class="wp-card" [class.wp-card-active]="lainnyaAktif()">
+    <label class="wp-card-head">
+      <input type="checkbox" [checked]="lainnyaAktif()" (change)="toggleLainnya()" />
+      <span>
+        <span class="wp-card-title">Lainnya</span>
+        <p class="wp-card-desc">{{ lainnyaDeskripsi }}</p>
+      </span>
+    </label>
+    @if (lainnyaAktif()) {
+      <div class="wp-anak">
+        <textarea
+          rows="2"
+          maxlength="200"
+          placeholder="Tuliskan departemen/jenis limbah yang belum terdaftar"
+          [value]="lainnyaTeks()"
+          (input)="onLainnyaTeks($any($event.target).value)"
+        ></textarea>
+      </div>
+    }
+  </div>
+</div>
+
+<div class="wp-total">Total dipilih: {{ totalDipilih().jenis }} jenis limbah dari {{ totalDipilih().sumber }} sumber.</div>

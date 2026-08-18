@@ -1,0 +1,131 @@
+<div class="page-head">
+  <div>
+    <h2>Laporan Dokumen ke HQ Jepang</h2>
+    <p>Simpan dan kelola dokumen laporan departemen yang akan dilaporkan ke perusahaan pusat di Jepang.</p>
+  </div>
+  <button type="button" class="btn-primary" (click)="toggleForm()">
+    <app-icon name="plus" [size]="16" />
+    Tambah Dokumen
+  </button>
+</div>
+
+<div class="stats">
+  <div class="stat-card">
+    <span class="stat-label">Total Dokumen</span>
+    <span class="stat-value">{{ counts().total }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Draft</span>
+    <span class="stat-value">{{ counts().draft }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Diajukan</span>
+    <span class="stat-value">{{ counts().diajukan }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Disetujui</span>
+    <span class="stat-value">{{ counts().disetujui }}</span>
+  </div>
+</div>
+
+@if (showForm()) {
+  <form class="panel form-panel" (ngSubmit)="submit()">
+    <div class="form-grid">
+      <label>
+        Judul Dokumen
+        <input type="text" [(ngModel)]="form.title" name="title" required placeholder="cth: Laporan Bulanan Safety Performance" />
+      </label>
+      <label>
+        Departemen
+        <select [(ngModel)]="form.department" name="department">
+          @for (d of departments; track d) {
+            <option [value]="d">{{ d }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Periode
+        <input type="text" [(ngModel)]="form.period" name="period" placeholder="cth: Agustus 2026" />
+      </label>
+      <label>
+        Kategori
+        <input type="text" [(ngModel)]="form.category" name="category" placeholder="cth: Safety Report" />
+      </label>
+      <label class="span-2">
+        Nama File
+        <input type="text" [(ngModel)]="form.fileName" name="fileName" required placeholder="cth: laporan-safety-agu-2026.pdf" />
+      </label>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" (click)="toggleForm()">Batal</button>
+      <button type="submit" class="btn-primary">Simpan Dokumen</button>
+    </div>
+  </form>
+}
+
+<div class="panel">
+  <div class="filters">
+    <select [(ngModel)]="filterDepartment" name="filterDepartment">
+      <option value="">Semua Departemen</option>
+      @for (d of departments; track d) {
+        <option [value]="d">{{ d }}</option>
+      }
+    </select>
+    <select [(ngModel)]="filterStatus" name="filterStatus">
+      <option value="">Semua Status</option>
+      <option value="Draft">Draft</option>
+      <option value="Diajukan">Diajukan</option>
+      <option value="Disetujui">Disetujui</option>
+    </select>
+    <input type="text" [(ngModel)]="search" name="search" placeholder="Cari judul dokumen..." class="search-input" />
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Judul Dokumen</th>
+          <th>Departemen</th>
+          <th>Periode</th>
+          <th>Kategori</th>
+          <th>Diunggah Oleh</th>
+          <th>Tanggal Upload</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (doc of filtered(); track doc.id) {
+          <tr>
+            <td>
+              <div class="cell-title">{{ doc.title }}</div>
+              <div class="cell-sub">{{ doc.fileName }}</div>
+            </td>
+            <td>{{ doc.department }}</td>
+            <td>{{ doc.period }}</td>
+            <td>{{ doc.category }}</td>
+            <td>{{ doc.uploadedBy }}</td>
+            <td>{{ doc.uploadDate }}</td>
+            <td>
+              <span
+                class="badge"
+                [class.badge-muted]="doc.status === 'Draft'"
+                [class.badge-info]="doc.status === 'Diajukan'"
+                [class.badge-success]="doc.status === 'Disetujui'"
+              >
+                {{ doc.status }}
+              </span>
+            </td>
+            <td class="actions">
+              <button type="button" class="link-btn danger" (click)="remove(doc.id)">Hapus</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8" class="empty-row">Tidak ada dokumen yang cocok dengan filter.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

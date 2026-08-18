@@ -1,0 +1,70 @@
+/* Style lokal halaman Limbah B3. Cascade checklist ada di waste-picker.css (budget terpisah). */
+
+.demo-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+.demo-bar strong { font-size: 13px; color: var(--text); }
+.role-btns { display: flex; gap: 6px; }
+.role-btn {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.role-btn.active { background: var(--brand-600); color: #fff; border-color: var(--brand-600); }
+.demo-note { font-size: 12px; color: var(--text-muted); }
+
+.panel-title { margin: 0 0 12px; font-size: 15px; color: var(--text); }
+.panel-title-spaced { margin-top: 20px; }
+.panel-sub { color: var(--text-muted); font-size: 13px; margin: -6px 0 14px; }
+.action-panel { margin-top: 16px; }
+
+.detail-head { margin-bottom: 16px; }
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 0 0 16px;
+}
+.detail-grid dt { color: var(--text-muted); font-size: 12px; margin-bottom: 2px; }
+.detail-grid dd { margin: 0; font-weight: 600; color: var(--text); }
+
+.riwayat { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.riwayat li { border-left: 2px solid var(--border); padding-left: 12px; font-size: 13px; }
+.riw-head { font-weight: 600; color: var(--text); }
+.riw-meta { color: var(--text-muted); font-size: 12px; }
+.riw-catatan { margin-top: 2px; color: var(--text); }
+
+.errors-box { color: var(--danger); font-size: 13px; margin: 12px 0 0; padding-left: 18px; }
+.info-box { color: var(--success); font-size: 13px; margin: 12px 0 0; }
+.readonly-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 10px 0 0;
+}
+
+.notif-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.notif-item:last-child { border-bottom: none; }
+.notif-top { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--text-muted); margin-bottom: 4px; flex-wrap: wrap; }
+.notif-subjek { font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.notif-isi { font-size: 13.5px; color: var(--text); }
+
+.input-sm { width: 90px; }
+.checkbox-label { flex-direction: row !important; align-items: center; gap: 8px; margin: 12px 0 0; }
+.checkbox-label input { width: auto; }
+.form-grid-spaced { margin-top: 14px; }

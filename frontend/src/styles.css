@@ -1,0 +1,73 @@
+/* You can add global styles to this file, and also import other style files */
+
+:root {
+  --brand-600: #1a5fa8;
+  --brand-700: #145189;
+  --brand-500: #2f8fd0;
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #eaf3fc;
+  --sidebar-active-text: #1a5fa8;
+  --sidebar-text: #5b6b79;
+  --sidebar-border: #eef1f4;
+
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --border: #e6e9ee;
+  --text: #1f2933;
+  --text-muted: #6b7684;
+
+  --success: #16a34a;
+  --success-bg: #e8f8ee;
+  --warning: #d97706;
+  --warning-bg: #fef3e2;
+  --danger: #dc2626;
+  --danger-bg: #fdeaea;
+  --info: #2563eb;
+  --info-bg: #e9f0fe;
+
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
+}
+
+:root.dark {
+  --sidebar-bg: #10181f;
+  --sidebar-active-bg: #16324a;
+  --sidebar-active-text: #6cb4ef;
+  --sidebar-text: #8b98a5;
+  --sidebar-border: #1c2731;
+
+  --bg: #0b1116;
+  --surface: #131b22;
+  --border: #223038;
+  --text: #e6ebf0;
+  --text-muted: #93a1ac;
+
+  --success-bg: #113420;
+  --warning-bg: #3a2a0e;
+  --danger-bg: #3a1616;
+  --info-bg: #10233f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}

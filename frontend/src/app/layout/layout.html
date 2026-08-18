@@ -1,0 +1,71 @@
+<div class="shell" [class.collapsed]="collapsed()">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-name">Otsuka</span>
+    </div>
+
+    <nav class="nav">
+      @for (item of menu; track item.label) {
+        @if (item.sectionLabel) {
+          <div class="section-label">{{ item.sectionLabel }}</div>
+        }
+
+        @if (item.children) {
+          <button
+            type="button"
+            class="nav-item nav-group-toggle"
+            [class.open]="isGroupOpen(item.label)"
+            (click)="toggleGroup(item.label)"
+          >
+            <app-icon [name]="item.icon" />
+            <span class="label">{{ item.label }}</span>
+            <app-icon name="chevron-down" [size]="16" class="chevron" />
+          </button>
+          @if (isGroupOpen(item.label)) {
+            <div class="sub-nav">
+              @for (child of item.children; track child.route) {
+                <a class="sub-nav-item" [routerLink]="child.route" routerLinkActive="active">{{ child.label }}</a>
+              }
+            </div>
+          }
+        } @else {
+          <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
+            <app-icon [name]="item.icon" />
+            <span class="label">{{ item.label }}</span>
+          </a>
+        }
+      }
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button type="button" class="icon-btn" (click)="toggleSidebar()" aria-label="Toggle sidebar">
+          <app-icon name="menu" />
+        </button>
+        <h1>{{ pageTitle() }}</h1>
+      </div>
+      <div class="topbar-right">
+        <button type="button" class="icon-btn" (click)="toggleDarkMode()" aria-label="Toggle dark mode">
+          <app-icon [name]="darkMode() ? 'sun' : 'moon'" />
+        </button>
+        <button type="button" class="icon-btn" (click)="toggleFullscreen()" aria-label="Toggle fullscreen">
+          <app-icon name="maximize" />
+        </button>
+        <div class="user-chip">
+          <span class="avatar">AM</span>
+          <span class="user-meta">
+            <span class="user-name">Azkha Mardiyan Muttaqien</span>
+            <span class="user-id">E04013</span>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
